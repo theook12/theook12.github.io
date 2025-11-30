@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maths Question Generator</title>
+    <title>Daily Integral Challenge</title>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -14,13 +15,13 @@
         .container {
             background: white;
             padding: 30px;
-            max-width: 400px;
+            max-width: 600px;
             margin: auto;
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
         button {
-            margin-top: 20px;
+            margin-top: 15px;
             padding: 10px 20px;
             font-size: 16px;
             cursor: pointer;
@@ -32,78 +33,530 @@
         button:hover {
             background: #45a049;
         }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
         #question {
-            font-size: 22px;
-            margin: 20px 0;
+            font-size: 24px;
+            margin: 25px 0;
+            min-height: 60px;
         }
         #result {
             margin-top: 15px;
             font-size: 18px;
+            min-height: 25px;
         }
-        input {
-            padding: 8px;
+        input[type="text"] {
+            padding: 10px;
             font-size: 16px;
-            width: 120px;
+            width: 300px;
             text-align: center;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .score-display {
+            font-size: 18px;
+            margin: 15px 0;
+            color: #333;
+        }
+        .username-section {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .username-section input {
+            width: 200px;
+        }
+        .leaderboard {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #4CAF50;
+        }
+        .leaderboard h3 {
+            color: #4CAF50;
+            margin-bottom: 15px;
+        }
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .leaderboard-table th,
+        .leaderboard-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        .leaderboard-table th {
+            background: #f5f5f5;
+            font-weight: bold;
+        }
+        .leaderboard-table tr:hover {
+            background: #f9f9f9;
+        }
+        .rank {
+            width: 40px;
+            text-align: center;
+        }
+        .current-user {
+            background: #e8f5e9 !important;
+            font-weight: bold;
+        }
+        .game-section {
+            display: none;
+        }
+        .game-section.active {
+            display: block;
+        }
+        .difficulty-selector {
+            margin: 20px 0;
+        }
+        .difficulty-selector label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .difficulty-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .difficulty-btn {
+            padding: 12px 20px;
+            border: 2px solid #ddd;
+            background: white;
+            color: #333;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.2s;
+            margin-top: 0;
+            min-width: 100px;
+        }
+        .difficulty-btn:hover:not(:disabled) {
+            border-color: #4CAF50;
+        }
+        .difficulty-btn.selected {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+        .difficulty-btn.completed {
+            background: #e8f5e9;
+            border-color: #4CAF50;
+            color: #4CAF50;
+        }
+        .difficulty-btn.failed {
+            background: #ffebee;
+            border-color: #f44336;
+            color: #f44336;
+        }
+        .difficulty-btn.easy { border-left: 4px solid #4CAF50; }
+        .difficulty-btn.medium { border-left: 4px solid #FF9800; }
+        .difficulty-btn.hard { border-left: 4px solid #f44336; }
+        .points-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .difficulty-btn.selected .points-info,
+        .difficulty-btn.completed .points-info,
+        .difficulty-btn.failed .points-info {
+            color: inherit;
+        }
+        .welcome-back {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .welcome-back p {
+            margin: 0 0 10px 0;
+        }
+        .username-error {
+            color: #f44336;
+            font-size: 12px;
+            margin-top: 8px;
+            display: none;
+        }
+        .daily-info {
+            background: #e3f2fd;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #1565c0;
+        }
+        .answer-hint {
+            font-size: 12px;
+            color: #666;
+            margin-top: 8px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-left: 5px;
+        }
+        .status-badge.correct {
+            background: #4CAF50;
+            color: white;
+        }
+        .status-badge.incorrect {
+            background: #f44336;
+            color: white;
+        }
+        .correct-answer-display {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 5px;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Maths Question Generator</h2>
+    <h2>Daily Integral Challenge</h2>
 
-    <div id="question">Click "New Question" to begin!</div>
+    <div id="usernameSection" class="username-section">
+        <p>Enter your username to start:</p>
+        <input type="text" id="usernameInput" placeholder="Your username" maxlength="20">
+        <div id="usernameError" class="username-error">This username is already taken. Please choose another.</div>
+        <br>
+        <button onclick="saveUsername()" id="startBtn">Start Playing</button>
+    </div>
 
-    <input type="number" id="answerInput" placeholder="Your answer">
-    <br>
-    <button onclick="checkAnswer()">Check Answer</button>
-    <button onclick="generateQuestion()">New Question</button>
+    <div id="welcomeBackSection" class="username-section" style="display: none;">
+        <div class="welcome-back">
+            <p>Welcome back, <strong id="savedUsername"></strong>!</p>
+            <button onclick="continueAsUser()">Continue Playing</button>
+        </div>
+    </div>
 
-    <div id="result"></div>
+    <div id="gameSection" class="game-section">
+        <div class="daily-info">
+            Today's Date: <strong id="todayDate"></strong><br>
+            One question per difficulty level per day. Choose wisely!
+        </div>
+
+        <div class="score-display">
+            Playing as: <strong id="playerName"></strong> | Total Score: <strong id="scoreDisplay">0</strong>
+        </div>
+
+        <div class="difficulty-selector">
+            <label>Select Difficulty:</label>
+            <div class="difficulty-buttons">
+                <button class="difficulty-btn easy" onclick="selectDifficulty('easy')" id="easyBtn">
+                    Easy
+                    <div class="points-info">1 point</div>
+                </button>
+                <button class="difficulty-btn medium" onclick="selectDifficulty('medium')" id="mediumBtn">
+                    Medium
+                    <div class="points-info">5 points</div>
+                </button>
+                <button class="difficulty-btn hard" onclick="selectDifficulty('hard')" id="hardBtn">
+                    Hard
+                    <div class="points-info">10 points</div>
+                </button>
+            </div>
+        </div>
+
+        <div id="questionArea" style="display: none;">
+            <div id="question"></div>
+
+            <input type="text" id="answerInput" placeholder="Enter your answer">
+            <div class="answer-hint" id="answerHint"></div>
+            <br>
+            <button onclick="submitAnswer()" id="submitBtn">Submit Answer</button>
+
+            <div id="result"></div>
+            <div id="correctAnswerDisplay" class="correct-answer-display" style="display: none;"></div>
+        </div>
+    </div>
+
+    <div class="leaderboard">
+        <h3>Leaderboard</h3>
+        <table class="leaderboard-table">
+            <thead>
+                <tr>
+                    <th class="rank">#</th>
+                    <th>Username</th>
+                    <th>Score</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboardBody">
+                <tr>
+                    <td colspan="3">No scores yet!</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <script>
-    let correctAnswer = null;
+    let username = '';
+    let currentDifficulty = null;
+    let dailyQuestions = {};
+    let userAttempts = {};
+    let totalScore = 0;
 
-    function generateQuestion() {
-        const operators = ["+", "-", "×", "÷"];
-        const op = operators[Math.floor(Math.random() * operators.length)];
-
-        let num1 = Math.floor(Math.random() * 20) + 1;
-        let num2 = Math.floor(Math.random() * 20) + 1;
-
-        // Make division questions clean (whole numbers)
-        if (op === "÷") {
-            num1 = num1 * num2;
+    function checkSavedUsername() {
+        const saved = localStorage.getItem('integralQuizUsername');
+        if (saved) {
+            username = saved;
+            document.getElementById('usernameSection').style.display = 'none';
+            document.getElementById('welcomeBackSection').style.display = 'block';
+            document.getElementById('savedUsername').textContent = saved;
         }
-
-        let questionText = `${num1} ${op} ${num2}`;
-        document.getElementById("question").textContent = questionText;
-
-        // Calculate answer
-        switch (op) {
-            case "+": correctAnswer = num1 + num2; break;
-            case "-": correctAnswer = num1 - num2; break;
-            case "×": correctAnswer = num1 * num2; break;
-            case "÷": correctAnswer = num1 / num2; break;
-        }
-
-        document.getElementById("result").textContent = "";
-        document.getElementById("answerInput").value = "";
+        loadLeaderboard();
     }
 
-    function checkAnswer() {
-        const userAnswer = Number(document.getElementById("answerInput").value);
-
-        if (userAnswer === correctAnswer) {
-            document.getElementById("result").textContent = "✅ Correct!";
-            document.getElementById("result").style.color = "green";
-        } else {
-            document.getElementById("result").textContent = `❌ Incorrect. The answer was ${correctAnswer}.`;
-            document.getElementById("result").style.color = "red";
+    async function saveUsername() {
+        const usernameInput = document.getElementById('usernameInput').value.trim();
+        const errorEl = document.getElementById('usernameError');
+        const startBtn = document.getElementById('startBtn');
+        
+        errorEl.style.display = 'none';
+        
+        if (!usernameInput) {
+            alert('Please enter a username!');
+            return;
+        }
+        
+        startBtn.disabled = true;
+        startBtn.textContent = 'Checking...';
+        
+        try {
+            const response = await fetch('/api/check-username', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: usernameInput })
+            });
+            
+            const result = await response.json();
+            
+            if (!result.available) {
+                errorEl.style.display = 'block';
+                startBtn.disabled = false;
+                startBtn.textContent = 'Start Playing';
+                return;
+            }
+            
+            username = usernameInput;
+            localStorage.setItem('integralQuizUsername', username);
+            startGame();
+        } catch (error) {
+            console.error('Error checking username:', error);
+            errorEl.textContent = 'Unable to verify username. Please try again.';
+            errorEl.style.display = 'block';
+            startBtn.disabled = false;
+            startBtn.textContent = 'Start Playing';
         }
     }
+
+    function continueAsUser() {
+        startGame();
+    }
+
+    async function startGame() {
+        document.getElementById('usernameSection').style.display = 'none';
+        document.getElementById('welcomeBackSection').style.display = 'none';
+        document.getElementById('gameSection').classList.add('active');
+        document.getElementById('playerName').textContent = username;
+        
+        await loadDailyQuestions();
+        await loadUserStatus();
+        await loadLeaderboard();
+        updateScoreDisplay();
+    }
+
+    async function loadDailyQuestions() {
+        try {
+            const response = await fetch('/api/daily-questions');
+            const data = await response.json();
+            dailyQuestions = data.questions;
+            document.getElementById('todayDate').textContent = data.date;
+        } catch (error) {
+            console.error('Error loading daily questions:', error);
+        }
+    }
+
+    async function loadUserStatus() {
+        try {
+            const response = await fetch('/api/user-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: username })
+            });
+            const data = await response.json();
+            userAttempts = data.attempts || {};
+            updateDifficultyButtons();
+        } catch (error) {
+            console.error('Error loading user status:', error);
+        }
+    }
+
+    function updateDifficultyButtons() {
+        const pointsMap = {'easy': 1, 'medium': 5, 'hard': 10};
+        ['easy', 'medium', 'hard'].forEach(difficulty => {
+            const btn = document.getElementById(difficulty + 'Btn');
+            btn.classList.remove('completed', 'failed', 'selected');
+            
+            const capitalizedDiff = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+            const pointsText = pointsMap[difficulty] === 1 ? '1 point' : `${pointsMap[difficulty]} points`;
+            
+            if (userAttempts[difficulty]) {
+                if (userAttempts[difficulty].correct) {
+                    btn.classList.add('completed');
+                    btn.innerHTML = `${capitalizedDiff} <span class="status-badge correct">Done</span><div class="points-info">${pointsText}</div>`;
+                } else {
+                    btn.classList.add('failed');
+                    btn.innerHTML = `${capitalizedDiff} <span class="status-badge incorrect">Tried</span><div class="points-info">${pointsText}</div>`;
+                }
+            } else {
+                btn.innerHTML = `${capitalizedDiff}<div class="points-info">${pointsText}</div>`;
+            }
+        });
+    }
+
+    function selectDifficulty(difficulty) {
+        if (userAttempts[difficulty]) {
+            alert(`You've already attempted today's ${difficulty} question!`);
+            return;
+        }
+        
+        currentDifficulty = difficulty;
+        
+        document.querySelectorAll('.difficulty-btn').forEach(btn => btn.classList.remove('selected'));
+        document.getElementById(difficulty + 'Btn').classList.add('selected');
+        
+        const question = dailyQuestions[difficulty];
+        if (question) {
+            document.getElementById('question').innerHTML = `\\[${question.latex}\\]`;
+            MathJax.typesetPromise([document.getElementById('question')]);
+            
+            if (question.answer_type === 'indefinite') {
+                document.getElementById('answerHint').textContent = 'Enter your answer without the +C constant (e.g., "x**2/2" for x squared over 2, "sin(x)" for sine)';
+            } else {
+                document.getElementById('answerHint').textContent = 'Enter the numeric answer (round to 2 decimal places if needed)';
+            }
+            
+            document.getElementById('questionArea').style.display = 'block';
+            document.getElementById('answerInput').value = '';
+            document.getElementById('result').textContent = '';
+            document.getElementById('correctAnswerDisplay').style.display = 'none';
+            document.getElementById('submitBtn').disabled = false;
+        }
+    }
+
+    async function submitAnswer() {
+        const answerInput = document.getElementById('answerInput').value.trim();
+        
+        if (!answerInput) {
+            alert('Please enter an answer!');
+            return;
+        }
+        
+        document.getElementById('submitBtn').disabled = true;
+        document.getElementById('submitBtn').textContent = 'Checking...';
+        
+        try {
+            const response = await fetch('/api/check-answer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: username,
+                    difficulty: currentDifficulty,
+                    answer: answerInput
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.already_attempted) {
+                document.getElementById('result').textContent = "You've already attempted this question today!";
+                document.getElementById('result').style.color = '#FF9800';
+            } else if (result.correct) {
+                document.getElementById('result').textContent = `Correct! +${result.points_earned} points`;
+                document.getElementById('result').style.color = 'green';
+                totalScore += result.points_earned;
+                updateScoreDisplay();
+            } else {
+                document.getElementById('result').textContent = 'Incorrect!';
+                document.getElementById('result').style.color = 'red';
+                
+                const correctDisplay = document.getElementById('correctAnswerDisplay');
+                correctDisplay.innerHTML = `Correct answer: \\(${result.correct_answer}\\)`;
+                correctDisplay.style.display = 'block';
+                MathJax.typesetPromise([correctDisplay]);
+            }
+            
+            userAttempts[currentDifficulty] = { correct: result.correct };
+            updateDifficultyButtons();
+            await loadLeaderboard();
+            
+        } catch (error) {
+            console.error('Error submitting answer:', error);
+            document.getElementById('result').textContent = 'Error checking answer. Please try again.';
+            document.getElementById('result').style.color = 'red';
+            document.getElementById('submitBtn').disabled = false;
+        }
+        
+        document.getElementById('submitBtn').textContent = 'Submit Answer';
+    }
+
+    async function loadLeaderboard() {
+        try {
+            const response = await fetch('/api/leaderboard');
+            if (response.ok) {
+                const leaderboard = await response.json();
+                updateLeaderboardDisplay(leaderboard);
+                
+                const currentUser = leaderboard.find(u => u.username.toLowerCase() === username.toLowerCase());
+                if (currentUser) {
+                    totalScore = currentUser.score;
+                    updateScoreDisplay();
+                }
+            }
+        } catch (error) {
+            console.error('Error loading leaderboard:', error);
+        }
+    }
+
+    function updateScoreDisplay() {
+        document.getElementById('scoreDisplay').textContent = totalScore;
+    }
+
+    function updateLeaderboardDisplay(leaderboard) {
+        const tbody = document.getElementById('leaderboardBody');
+        
+        if (leaderboard.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3">No scores yet!</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = leaderboard.map((entry, index) => {
+            const isCurrentUser = entry.username.toLowerCase() === username.toLowerCase();
+            return `
+                <tr class="${isCurrentUser ? 'current-user' : ''}">
+                    <td class="rank">${index + 1}</td>
+                    <td>${escapeHtml(entry.username)}</td>
+                    <td>${entry.score}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    checkSavedUsername();
 </script>
 
 </body>
