@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maths Question Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 40px;
+            background: #f7f7f7;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            max-width: 400px;
+            margin: auto;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            background: #4CAF50;
+            color: white;
+            border-radius: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        #question {
+            font-size: 22px;
+            margin: 20px 0;
+        }
+        #result {
+            margin-top: 15px;
+            font-size: 18px;
+        }
+        input {
+            padding: 8px;
+            font-size: 16px;
+            width: 120px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Maths Question Generator</h2>
+
+    <div id="question">Click "New Question" to begin!</div>
+
+    <input type="number" id="answerInput" placeholder="Your answer">
+    <br>
+    <button onclick="checkAnswer()">Check Answer</button>
+    <button onclick="generateQuestion()">New Question</button>
+
+    <div id="result"></div>
+</div>
+
+<script>
+    let correctAnswer = null;
+
+    function generateQuestion() {
+        const operators = ["+", "-", "×", "÷"];
+        const op = operators[Math.floor(Math.random() * operators.length)];
+
+        let num1 = Math.floor(Math.random() * 20) + 1;
+        let num2 = Math.floor(Math.random() * 20) + 1;
+
+        // Make division questions clean (whole numbers)
+        if (op === "÷") {
+            num1 = num1 * num2;
+        }
+
+        let questionText = `${num1} ${op} ${num2}`;
+        document.getElementById("question").textContent = questionText;
+
+        // Calculate answer
+        switch (op) {
+            case "+": correctAnswer = num1 + num2; break;
+            case "-": correctAnswer = num1 - num2; break;
+            case "×": correctAnswer = num1 * num2; break;
+            case "÷": correctAnswer = num1 / num2; break;
+        }
+
+        document.getElementById("result").textContent = "";
+        document.getElementById("answerInput").value = "";
+    }
+
+    function checkAnswer() {
+        const userAnswer = Number(document.getElementById("answerInput").value);
+
+        if (userAnswer === correctAnswer) {
+            document.getElementById("result").textContent = "✅ Correct!";
+            document.getElementById("result").style.color = "green";
+        } else {
+            document.getElementById("result").textContent = `❌ Incorrect. The answer was ${correctAnswer}.`;
+            document.getElementById("result").style.color = "red";
+        }
+    }
+</script>
+
+</body>
+</html>
